@@ -1,0 +1,59 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 3. Primitives
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+
+    // Blueprint Validators
+    function isValidDocument(data, uId) {
+      return data.keys().hasAll(['userId', 'originalName', 'systemName', 'matiere', 'niveau', 'categorie', 'fileKey', 'createdAt', 'updatedAt']) 
+             && data.keys().size() == 9
+             && data.userId == uId
+             && data.originalName is string && data.originalName.size() <= 300
+             && data.systemName is string && data.systemName.size() <= 300
+             && data.matiere is string && data.matiere.size() <= 100
+             && data.niveau is string && data.niveau.size() <= 100
+             && data.categorie is string && data.categorie.size() <= 100
+             && data.fileKey is string && data.fileKey.size() <= 100
+             && data.createdAt is number
+             && data.updatedAt is number;
+    }
+
+    // 4. Fortress Rules
+    match /users/{userId}/documents/{documentId} {
+      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(documentId);
+      allow list: if isSignedIn() && request.auth.uid == userId;
+      
+      allow create: if isSignedIn() 
+        && request.auth.uid == userId
+        && isValidId(documentId)
+        && isValidDocument(incoming(), userId)
+        && incoming().createdAt == request.time.toMillis()
+        && incoming().updatedAt == request.time.toMillis();
+        
+      allow update: if isSignedIn()
+        && request.auth.uid == userId
+        && isValidId(documentId)
+        && isValidDocument(incoming(), userId)
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time.toMillis()
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['updatedAt', 'systemName', 'matiere', 'niveau', 'categorie'])
+        );
+        
+      allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(documentId);
+    }
+  }
+}

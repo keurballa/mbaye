@@ -1,0 +1,6 @@
+{
+  "name": "EduDoc Manager",
+  "description": "Système de gestion et de classement de documents scolaires PDF par matières, niveaux et catégories.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

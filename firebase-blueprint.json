@@ -1,0 +1,28 @@
+{
+  "entities": {
+    "Document": {
+      "title": "Document",
+      "description": "A PDF document metadata record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Document ID" },
+        "userId": { "type": "string", "description": "Owner user ID" },
+        "originalName": { "type": "string" },
+        "systemName": { "type": "string" },
+        "matiere": { "type": "string" },
+        "niveau": { "type": "string" },
+        "categorie": { "type": "string" },
+        "fileKey": { "type": "string", "description": "Key to retrieve blob from IndexedDB" },
+        "createdAt": { "type": "integer", "description": "Server timestamp" },
+        "updatedAt": { "type": "integer", "description": "Server timestamp" }
+      },
+      "required": ["userId", "originalName", "systemName", "matiere", "niveau", "categorie", "fileKey", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}/documents/{documentId}": {
+      "schema": { "$ref": "#/entities/Document" },
+      "description": "User's uploaded PDF documents metadata"
+    }
+  }
+}
